@@ -1,0 +1,15 @@
+/Users/xinzeng/Documents/GitHub/MyStudy/note/算法/GA_OrderBatchingLab/src/main/java/entity/Area.java
+/Users/xinzeng/Documents/GitHub/MyStudy/note/算法/GA_OrderBatchingLab/src/main/java/service/BaseInfo.java
+/Users/xinzeng/Documents/GitHub/MyStudy/note/算法/GA_OrderBatchingLab/src/main/java/entity/OrderDetail.java
+/Users/xinzeng/Documents/GitHub/MyStudy/note/算法/GA_OrderBatchingLab/src/main/java/common/CommonUtil.java
+/Users/xinzeng/Documents/GitHub/MyStudy/note/算法/GA_OrderBatchingLab/src/main/java/ga/GeneAlgorithm.java
+/Users/xinzeng/Documents/GitHub/MyStudy/note/算法/GA_OrderBatchingLab/src/main/java/entity/Position.java
+/Users/xinzeng/Documents/GitHub/MyStudy/note/算法/GA_OrderBatchingLab/src/main/java/OrderBatching.java
+/Users/xinzeng/Documents/GitHub/MyStudy/note/算法/GA_OrderBatchingLab/src/main/java/annotation/LogInfo.java
+/Users/xinzeng/Documents/GitHub/MyStudy/note/算法/GA_OrderBatchingLab/src/main/java/entity/Batch.java
+/Users/xinzeng/Documents/GitHub/MyStudy/note/算法/GA_OrderBatchingLab/src/main/java/service/TimeSystem.java
+/Users/xinzeng/Documents/GitHub/MyStudy/note/算法/GA_OrderBatchingLab/src/main/java/service/ReceiveOrderService.java
+/Users/xinzeng/Documents/GitHub/MyStudy/note/算法/GA_OrderBatchingLab/src/main/java/entity/Order.java
+/Users/xinzeng/Documents/GitHub/MyStudy/note/算法/GA_OrderBatchingLab/src/main/java/service/CalFitnessService.java
+/Users/xinzeng/Documents/GitHub/MyStudy/note/算法/GA_OrderBatchingLab/src/main/java/ga/Chromosome.java
+/Users/xinzeng/Documents/GitHub/MyStudy/note/算法/GA_OrderBatchingLab/src/main/java/ga/Population.java
