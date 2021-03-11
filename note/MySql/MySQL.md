@@ -18,7 +18,7 @@
 - 提高了范围查找的能力
 - 相同层数大大增加了能存放的数据数量
 
-### 隔离级别
+## 隔离级别
 
 - 读未提交
 - 读提交
@@ -47,4 +47,21 @@
 - 快照读
 - 当前读
 
-![一致性读](/Users/xinzeng/Documents/note/MySql/一致性读.png)
+### Read View
+
+![一致性读](MySQL.assets/一致性读.png)
+
+- RC隔离级别每次读都会生成新的read view，RR级别只有第一次才会生成
+- 生成的瞬间会记下4个东西：当前活跃的事务Id[m_ids ]；其中最小的Id[min_trx_id ]；最大的Id[max_trx_id ]；生成该事务的事务Id[creator_trx_id ]
+- 当前活跃的就意味着还没有提交的
+
+- 当 trx_id = creator_trx_id 时:当前事务可以看见自己所修改的数据， **可见**，
+
+- 当 trx_id < min_trx_id 时  : 生成此数据的事务已经在生成readView前提交了， **可见**
+
+- 当  trx_id >= max_trx_id 时  :表明生成该数据的事务是在生成ReadView后才开启的， **不可见**
+
+- 当  min_trx_id <= trx_id < max_trx_id 时
+
+- - trx_id 在 m_ids 列表里面 ：生成ReadView时，活跃事务还未提交，**不可见**
+  - trx_id 不在 m_ids 列表里面 ：事务在生成readView前已经提交了，**可见**
