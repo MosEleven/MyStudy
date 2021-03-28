@@ -36,7 +36,7 @@
 ## 3.2 dispatcherServlet
 
 - 核心是doService（）方法
-- ![原理](/Users/xinzeng/Documents/note/SpringMVC/原理.png)
+- ![原理](SpringMVC-1.assets/原理.png)
   - 处理器映射器：找到controller
   - 处理适配器：适配controller比如行参（调用参数绑定组件）
   - 视图解析器（不能省，可以替换成别的）：转发或者重定向
@@ -67,7 +67,7 @@
 
 ## 3.8 Model和Modelmap
 
-- ![image-20200808110445771](/Users/xinzeng/Documents/note/SpringMVC/Model和Modelmap.png)
+- ![image-20200808110445771](SpringMVC-1.assets/Model和Modelmap.png)
 
 ## 3.9 乱码
 
@@ -88,7 +88,7 @@
 
 - 基于AOP的
 
-![img](SpringMVC-1.assets/aHR0cHM6Ly91cGxvYWQtaW1hZ2VzLmppYW5zaHUuaW8vdXBsb2FkX2ltYWdlcy8xNTQ1NDQ3OS00MWE1ZWI0MThiOGVmNjM0LnBuZz9pbWFnZU1vZ3IyL2F1dG8tb3JpZW50L3N0cmlwfGltYWdlVmlldzIvMi93LzkxNy9mb3JtYXQvd2VicA)
+![img](SpringMVC-1.assets/切片边界.png)
 
 
 
