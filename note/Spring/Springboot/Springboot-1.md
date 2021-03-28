@@ -1,6 +1,6 @@
 # 1、学习内容
 
-![image-20200806112336680](/Users/xinzeng/Documents/note/Springboot/学习路线.png)
+![学习路线](Springboot-1.assets/学习路线.png)
 
 # 2、 第一个程序
 
@@ -34,7 +34,7 @@
 
   - @SpringbootApplication：这里面的东西要一个个点进去看
 
-  - https://www.processon.com/mindmap/5f35002607912920b49a2f54
+  ![img](Springboot-1.assets/JdOnline20210326172818.png)
 
   - Springboot所有的自动配置都是启动的时候扫描并加载
     - spring.factories：所有的自动配置类都在这里面

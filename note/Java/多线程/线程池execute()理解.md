@@ -72,7 +72,7 @@ private static int ctlOf(int rs, int wc) { return rs | wc; }
 
 ```java
 //我认为整个执行最困难的点在于如何在多线程的环境下保证按照设计的流程走，每一步都需要考虑并发的可能性
-//还有就是线程池的池体现在哪里了，目前还是创造线程，没看到线程的池利用
+//线程创建的时候传入了worker本身，start方法调用了worker重写的run方法，即runWorker()
 public void execute(Runnable command) {
     //先校验运行对象是否为空
     if (command == null)
@@ -104,6 +104,7 @@ public void execute(Runnable command) {
         if (!isRunning(recheck) && remove(command))
             reject(command);
         else if (workerCountOf(recheck) == 0)
+            //按理是不可能走到这个分支的呀，没加进核心线程且线程池在运行状态，worker数还是0
             addWorker(null, false);
     }
     /**、
@@ -150,7 +151,176 @@ public void execute(Runnable command) {
 
 #### 我的理解
 
+```java
+private boolean addWorker(Runnable firstTask, boolean core) {
+    //整个retry大循环就是为了ctl自增，代表worker+1
+    retry:
+    for (;;) {
+        int c = ctl.get();
+        int rs = runStateOf(c);
 
+        // Check if queue empty only if necessary.
+        if (rs >= SHUTDOWN &&
+            ! (rs == SHUTDOWN &&
+               firstTask == null &&
+               ! workQueue.isEmpty()))
+            return false;
+
+        for (;;) {
+            int wc = workerCountOf(c);
+            if (wc >= CAPACITY ||
+                wc >= (core ? corePoolSize : maximumPoolSize))
+                return false;
+            if (compareAndIncrementWorkerCount(c))
+                break retry;
+            c = ctl.get();  // Re-read ctl
+            if (runStateOf(c) != rs)
+                continue retry;
+            // else CAS failed due to workerCount change; retry inner loop
+        }
+    }
+
+    //两层try，外层负责在添加worker失败时调用addWorkerFailed函数，内层负责解锁
+    //这段的作用是尝试将worker加入workerset并start线程
+    boolean workerStarted = false;
+    boolean workerAdded = false;
+    Worker w = null;
+    try {
+        w = new Worker(firstTask);
+        final Thread t = w.thread;
+        if (t != null) {
+            final ReentrantLock mainLock = this.mainLock;
+            mainLock.lock();
+            try {
+                // Recheck while holding lock.
+                // Back out on ThreadFactory failure or if
+                // shut down before lock acquired.
+                int rs = runStateOf(ctl.get());
+
+                if (rs < SHUTDOWN ||
+                    (rs == SHUTDOWN && firstTask == null)) {
+                    if (t.isAlive()) // precheck that t is startable
+                        throw new IllegalThreadStateException();
+                    workers.add(w);
+                    int s = workers.size();
+                    if (s > largestPoolSize)
+                        largestPoolSize = s;
+                    workerAdded = true;
+                }
+            } finally {
+                mainLock.unlock();
+            }
+            if (workerAdded) {
+                t.start();
+                workerStarted = true;
+            }
+        }
+    } finally {
+        if (! workerStarted)
+            addWorkerFailed(w);
+    }
+    return workerStarted;
+}
+```
+
+### addWorkerFailed
+
+#### 源码注解
+
+```java
+Rolls back the worker thread creation. - removes worker from workers, if present - decrements worker count - rechecks for termination, in case the existence of this worker was holding up termination
+```
+
+#### 我的理解
+
+```java
+//ctl自减，并检查需不需要改变线程池状态
+private void addWorkerFailed(Worker w) {
+    final ReentrantLock mainLock = this.mainLock;
+    mainLock.lock();
+    try {
+        if (w != null)
+            workers.remove(w);
+        decrementWorkerCount();
+        tryTerminate();
+    } finally {
+        mainLock.unlock();
+    }
+}
+```
+
+### runWorker
+
+```java
+//核心：循环拿任务
+try{
+    while (task != null || (task = getTask()) != null){...}
+}finally {
+    //拿不到任务就说明该被销毁了
+    processWorkerExit(w, completedAbruptly);
+}
+```
+
+
+
+### getTask
+
+#### 源码注解
+
+```java
+Performs blocking or timed wait for a task, depending on current configuration settings, or returns null if this worker must exit because of any of: 1. There are more than maximumPoolSize workers (due to a call to setMaximumPoolSize). 2. The pool is stopped. 3. The pool is shutdown and the queue is empty. 4. This worker timed out waiting for a task, and timed-out workers are subject to termination (that is, allowCoreThreadTimeOut || workerCount > corePoolSize) both before and after the timed wait, and if the queue is non-empty, this worker is not the last thread in the pool.
+Returns:
+task, or null if the worker must exit, in which case workerCount is decremented
+```
+
+#### 我的理解
+
+```java
+private Runnable getTask() {
+    //刚进来的时候才开始空闲，当作没有超时
+    boolean timedOut = false; // Did the last poll() time out?
+
+    for (;;) {
+        int c = ctl.get();
+        int rs = runStateOf(c);
+
+        // 是否要停止获取任务
+        //stop一定停止，shutdown&&无任务也停止
+        if (rs >= SHUTDOWN && (rs >= STOP || workQueue.isEmpty())) {
+            decrementWorkerCount();
+            return null;
+        }
+
+        int wc = workerCountOf(c);
+
+        // 实际上也没有核心非核心的区分，都是靠timed参数来控制的
+        boolean timed = allowCoreThreadTimeOut || wc > corePoolSize;
+
+        //超时或者超出上限都要扣worker
+        if ((wc > maximumPoolSize || (timed && timedOut))
+            && (wc > 1 || workQueue.isEmpty())) {
+            if (compareAndDecrementWorkerCount(c))
+                return null;
+            continue;
+        }
+
+        try {
+            Runnable r = timed ?
+                //会超时的，超时返回null
+                workQueue.poll(keepAliveTime, TimeUnit.NANOSECONDS) :
+            	//等，直到拿到任务，下面就会return
+                workQueue.take();
+            if (r != null)
+                return r;
+            
+            //能走到这里是一定超时了，因为take是一直等，直到有任务
+            timedOut = true;
+        } catch (InterruptedException retry) {
+            timedOut = false;
+        }
+    }
+}
+```
 
 
 
@@ -160,4 +330,5 @@ public void execute(Runnable command) {
 
 1. 状态流转可以使用类似ctl的手段，配置一套掩码和计算方式
    - 对于顺序状态好用，非顺序的可能还是直接赋值比较方便
+   - ctl还有一个巧妙的点就是他将状态和数量合到一个数里面了
 
